@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brick</title>
+<meta name="description" content="Gestão de revenda: compras, vendas, lucro e estoque.">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Brick">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --border: #e4e7ec;
+  --text: #0f1729;
+  --text-2: #4b5565;
+  --text-3: #8a93a3;
+  --accent: #2563eb;
+  --accent-soft: #e8efff;
+  --on-accent: #ffffff;
+  --good: #0a8a4b;
+  --good-soft: #e5f6ec;
+  --bad: #d23a3a;
+  --bad-soft: #fdeaea;
+  --warn: #b26b00;
+  --warn-soft: #fff3dc;
+  --s1: #2a78d6;
+  --s2: #1baf7a;
+  --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+  --radius: 16px;
+  --tabbar-h: 64px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0c0f;
+  --surface: #15171c;
+  --surface-2: #1d2027;
+  --border: #2a2e37;
+  --text: #f2f4f7;
+  --text-2: #b3bac6;
+  --text-3: #7c8594;
+  --accent: #4f8bff;
+  --accent-soft: #1a2640;
+  --on-accent: #ffffff;
+  --good: #2fc77a;
+  --good-soft: #10291c;
+  --bad: #ff6b6b;
+  --bad-soft: #321616;
+  --warn: #f0a63a;
+  --warn-soft: #2e2210;
+  --s1: #3987e5;
+  --s2: #199e70;
+  --shadow: none;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 24px);
+  overscroll-behavior-y: none;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Header */
+.top {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px);
+  padding: calc(var(--safe-t) + 12px) 16px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.top h1 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
+.top .sub { font-size: 13px; color: var(--text-3); }
+main { padding: 0 16px; max-width: 720px; margin: 0 auto; }
+.view { display: none; }
+.view.active { display: block; animation: fade .18s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
+
+/* Segmented / chips */
+.seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 3px; gap: 2px; margin-bottom: 14px; }
+.seg button { flex: 1; border: 0; background: transparent; padding: 8px 4px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 0 -16px 12px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--border); background: var(--surface); padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.chip.on { background: var(--text); border-color: var(--text); color: var(--bg); }
+.chip .c { opacity: .6; margin-left: 4px; font-weight: 500; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+.card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card h2 .link { font-size: 13px; font-weight: 600; color: var(--accent); background: none; border: 0; padding: 0; }
+.label { font-size: 12px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.hero { padding: 20px 16px; }
+.hero .big { font-size: 38px; font-weight: 750; letter-spacing: -.03em; margin: 4px 0 6px; }
+.hero .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--text-2); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.neutral { background: var(--surface-2); color: var(--text-2); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.info { background: var(--accent-soft); color: var(--accent); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 0; }
+.tile .v { font-size: 19px; font-weight: 700; margin-top: 4px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .h { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.kv { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--border); gap: 12px; }
+.kv:first-of-type { border-top: 0; }
+.kv span:first-child { color: var(--text-2); }
+.kv b { font-weight: 650; }
+.progress { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 10px 0 6px; }
+.progress > div { height: 100%; background: var(--good); border-radius: 999px; transition: width .4s ease; }
+
+/* Product list */
+.search { display: flex; gap: 8px; margin-bottom: 12px; }
+.search input, .search select { flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 11px 12px; outline: none; }
+.search select { flex: none; width: auto; }
+.search input:focus { border-color: var(--accent); }
+.plist { display: flex; flex-direction: column; gap: 8px; }
+.pitem { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px; box-shadow: var(--shadow); }
+.thumb { width: 56px; height: 56px; border-radius: 10px; background: var(--surface-2); flex: none; object-fit: cover; display: grid; place-items: center; color: var(--text-3); font-weight: 700; font-size: 18px; overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pbody { flex: 1; min-width: 0; }
+.pname { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pmeta { font-size: 12.5px; color: var(--text-2); margin-top: 2px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pmeta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); }
+.pnums { font-size: 12.5px; margin-top: 4px; display: flex; gap: 4px 10px; flex-wrap: wrap; }
+.pnums span { white-space: nowrap; }
+.check { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); flex: none; display: grid; place-items: center; color: transparent; transition: all .15s; }
+.check.done { background: var(--good); border-color: var(--good); color: #fff; }
+.check svg { width: 20px; height: 20px; }
+.badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+.st-estoque { background: var(--surface-2); color: var(--text-2); }
+.st-anunciado { background: var(--accent-soft); color: var(--accent); }
+.st-reservado { background: var(--warn-soft); color: var(--warn); }
+.st-vendido { background: var(--good-soft); color: var(--good); }
+.empty { text-align: center; color: var(--text-3); padding: 40px 16px; }
+.empty b { display: block; color: var(--text); font-size: 16px; margin-bottom: 6px; }
+
+/* Lists */
+.row-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.row-item:first-child { border-top: 0; }
+.row-item .grow { flex: 1; min-width: 0; }
+.row-item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-item .s { font-size: 12.5px; color: var(--text-3); }
+.row-item .r { text-align: right; font-weight: 650; white-space: nowrap; }
+
+/* Bars (categories) */
+.hbar { margin: 10px 0; }
+.hbar .top-l { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; gap: 8px; }
+.hbar .top-l span:first-child { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar .track { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.hbar .fill { height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
+.hbar .fill.neg { background: var(--bad); }
+
+/* Chart */
+.chart-wrap { position: relative; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--text-2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.tip { position: absolute; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; padding: 8px 10px; border-radius: 10px; white-space: nowrap; transform: translate(-50%, 0); opacity: 0; transition: opacity .12s; z-index: 2; }
+.tip.show { opacity: 1; }
+.tip b { display: block; margin-bottom: 2px; }
+table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.t th, table.t td { padding: 8px 4px; text-align: right; border-top: 1px solid var(--border); white-space: nowrap; }
+table.t th { color: var(--text-3); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; border-top: 0; }
+table.t td:first-child, table.t th:first-child { text-align: left; }
+.scroll-x { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+
+/* Tab bar */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(14px); -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-b);
+  display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--tabbar-h) + var(--safe-b));
+}
+.tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-3); }
+.tabbar button.on { color: var(--accent); }
+.tabbar svg { width: 24px; height: 24px; }
+.tabbar .add { position: relative; }
+.tabbar .add span { width: 52px; height: 52px; border-radius: 18px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(37,99,235,.35); }
+.tabbar .add svg { width: 28px; height: 28px; }
+
+/* Sheet */
+.backdrop { position: fixed; inset: 0; background: rgba(10,14,22,.45); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.backdrop.show { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-height: 92dvh; overflow-y: auto;
+  background: var(--surface); border-radius: 22px 22px 0 0; padding: 8px 16px calc(20px + var(--safe-b));
+  transform: translateY(105%); transition: transform .25s cubic-bezier(.2,.8,.2,1); max-width: 720px; margin: 0 auto;
+}
+.sheet.show { transform: none; }
+.sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--border); margin: 4px auto 12px; }
+.sheet h3 { margin: 0 0 14px; font-size: 19px; display: flex; justify-content: space-between; align-items: center; }
+.sheet h3 button { border: 0; background: var(--surface-2); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; color: var(--text-2); }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 12px; outline: none; font-size: 16px; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field textarea { min-height: 70px; resize: vertical; }
+.field .hint { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+.money { position: relative; }
+.money::before { content: "R$"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 15px; pointer-events: none; }
+.money input { padding-left: 38px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.section-t { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 10px; }
+.preview { background: var(--surface-2); border-radius: 12px; padding: 12px; font-size: 14px; margin: 6px 0 14px; }
+.preview .kv { padding: 5px 0; border: 0; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 700; font-size: 16px; background: var(--accent); color: var(--on-accent); }
+.btn.secondary { background: var(--surface-2); color: var(--text); }
+.btn.good { background: var(--good); color: #fff; }
+.btn.danger { background: var(--bad-soft); color: var(--bad); }
+.btn.small { padding: 10px 12px; font-size: 14px; border-radius: 12px; width: auto; }
+.btns { display: flex; gap: 8px; margin-top: 8px; }
+.btns .btn { flex: 1; }
+.stack > * + * { margin-top: 8px; }
+.photo-pick { display: flex; gap: 12px; align-items: center; }
+.photo-pick .thumb { width: 72px; height: 72px; }
+.seg-inline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.seg-inline button { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 9px 2px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.seg-inline button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.detail-photo { width: 100%; max-height: 280px; object-fit: cover; border-radius: 14px; margin-bottom: 12px; }
+
+/* Toast */
+.toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 14px); transform: translate(-50%, 20px); background: var(--text); color: var(--bg); padding: 11px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 60; opacity: 0; pointer-events: none; transition: all .2s; display: flex; gap: 14px; align-items: center; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { background: none; border: 0; color: var(--accent); font-weight: 800; padding: 0; }
+:root[data-theme="light"] .toast button { color: #8fb4ff; }
+.alert { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); color: var(--warn); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; margin-bottom: 12px; font-weight: 600; border: 0; width: 100%; text-align: left; }
+.alert svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.muted { color: var(--text-3); }
+.small { font-size: 12.5px; }
+.mt0 { margin-top: 0; }
+@media (min-width: 560px) { .grid.g3 { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <div class="sub" id="hdrSub">Gestão de revenda</div>
+    <h1 id="hdrTitle">Painel</h1>
+  </div>
+  <div id="hdrRight"></div>
+</header>
+
+<main>
+  <!-- PAINEL -->
+  <section class="view active" id="v-painel">
+    <div class="seg" id="periodSeg">
+      <button data-p="mes" class="on">Este mês</button>
+      <button data-p="30d">30 dias</button>
+      <button data-p="ano">Ano</button>
+      <button data-p="tudo">Tudo</button>
+    </div>
+    <div id="dash"></div>
+  </section>
+
+  <!-- PRODUTOS -->
+  <section class="view" id="v-produtos">
+    <div class="search">
+      <input id="q" type="search" placeholder="Buscar…" autocomplete="off">
+      <select id="sort" aria-label="Ordenar">
+        <option value="recent">Recentes</option>
+        <option value="old">Mais antigos</option>
+        <option value="profit">Maior lucro</option>
+        <option value="price">Maior preço</option>
+        <option value="name">A–Z</option>
+      </select>
+    </div>
+    <div class="chips" id="statusChips"></div>
+    <div class="plist" id="plist"></div>
+  </section>
+
+  <!-- RELATÓRIOS -->
+  <section class="view" id="v-relatorios">
+    <div id="reports"></div>
+  </section>
+
+  <!-- MAIS -->
+  <section class="view" id="v-mais">
+    <div id="more"></div>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-v="painel" class="on" aria-label="Painel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    Painel
+  </button>
+  <button data-v="produtos" aria-label="Produtos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>
+    Produtos
+  </button>
+  <button class="add" id="addBtn" aria-label="Adicionar produto">
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+  </button>
+  <button data-v="relatorios" aria-label="Relatórios">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v2M11 10v7M15 12v5M19 6v11"/></svg>
+    Relatórios
+  </button>
+  <button data-v="mais" aria-label="Mais">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M16 15h2"/></svg>
+    Caixa
+  </button>
+</nav>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileImport" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* =========================================================
+   Storage (IndexedDB com fallback para localStorage)
+   ========================================================= */
+const DB_NAME = 'brick-db', STORE = 'kv', KEY = 'state';
+let dbp = null;
+function idb() {
+  if (dbp) return dbp;
+  dbp = new Promise((res, rej) => {
+    if (!('indexedDB' in window)) return rej('no idb');
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbp;
+}
+async function loadState() {
+  try {
+    const db = await idb();
+    const v = await new Promise((res, rej) => {
+      const t = db.transaction(STORE).objectStore(STORE).get(KEY);
+      t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error);
+    });
+    if (v) return v;
+  } catch (e) {}
+  try { const s = localStorage.getItem('brick-state'); if (s) return JSON.parse(s); } catch (e) {}
+  return null;
+}
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const db = await idb();
+      db.transaction(STORE, 'readwrite').objectStore(STORE).put(S, KEY);
+    } catch (e) {
+      try { localStorage.setItem('brick-state', JSON.stringify(S)); } catch (e2) { toast('Não foi possível salvar — memória cheia?'); }
+    }
+  }, 150);
+}
+
+/* =========================================================
+   Estado
+   ========================================================= */
+const DEFAULT_CATS = ['Celulares', 'Eletrônicos', 'Games', 'Informática', 'Eletrodomésticos', 'Móveis', 'Roupas e tênis', 'Ferramentas', 'Bicicletas', 'Outros'];
+const PLATFORMS = ['Facebook Marketplace', 'OLX', 'Instagram', 'WhatsApp', 'Mercado Livre', 'Enjoei', 'Presencial', 'Outro'];
+const STATUS = {
+  estoque: 'Em estoque',
+  anunciado: 'Anunciado',
+  reservado: 'Reservado',
+  vendido: 'Vendido'
+};
+let S = {
+  version: 1,
+  products: [],
+  cash: [],
+  settings: { theme: 'light', goal: 0, staleDays: 30, cats: DEFAULT_CATS.slice() }
+};
+const ui = { view: 'painel', period: 'mes', status: 'todos', q: '', sort: 'recent' };
+
+/* =========================================================
+   Utilidades
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const BRL0 = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const fmt = v => BRL.format(v || 0);
+const fmtK = v => {
+  const a = Math.abs(v);
+  if (a >= 1e6) return 'R$ ' + (v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+  if (a >= 1e4) return 'R$ ' + (v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
+  return BRL0.format(v);
+};
+const pct = v => (isFinite(v) ? (v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%' : '—');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function parseMoney(s) {
+  if (typeof s === 'number') return s;
+  s = String(s || '').replace(/[R$\s]/g, '');
+  if (!s) return 0;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = parseFloat(s);
+  return isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
+const moneyIn = v => (v ? String(v).replace('.', ',') : '');
+function todayStr() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const daysBetween = (a, b) => Math.max(0, Math.round((toDate(b) - toDate(a)) / 864e5));
+const fmtDate = s => s ? toDate(s).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '') : '';
+const fmtDateLong = s => s ? toDate(s).toLocaleDateString('pt-BR') : '';
+const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const ym = s => s.slice(0, 7);
+const ymLabel = k => { const [y, m] = k.split('-'); return MONTHS[+m - 1] + '/' + y.slice(2); };
+
+const cost = p => (p.buyPrice || 0) + (p.extraCost || 0);
+const net = p => (p.sellPrice || 0) - (p.sellFee || 0);
+const profit = p => net(p) - cost(p);
+const isSold = p => p.status === 'vendido';
+const age = p => daysBetween(p.buyDate || todayStr(), isSold(p) ? (p.sellDate || todayStr()) : todayStr());
+
+/* Períodos */
+function periodRange(p, offset = 0) {
+  const t = toDate(todayStr());
+  if (p === 'mes') {
+    const a = new Date(t.getFullYear(), t.getMonth() - offset, 1);
+    const b = offset ? new Date(t.getFullYear(), t.getMonth() - offset + 1, 0) : t;
+    return [a, b];
+  }
+  if (p === '30d') {
+    const b = new Date(t); b.setDate(b.getDate() - 30 * offset);
+    const a = new Date(b); a.setDate(a.getDate() - 29);
+    return [a, b];
+  }
+  if (p === 'ano') return [new Date(t.getFullYear() - offset, 0, 1), offset ? new Date(t.getFullYear() - offset, 11, 31) : t];
+  return [new Date(2000, 0, 1), new Date(2999, 0, 1)];
+}
+const inRange = (s, [a, b]) => s && toDate(s) >= a && toDate(s) <= b;
+
+function stats(range) {
+  const sold = S.products.filter(p => isSold(p) && inRange(p.sellDate, range));
+  const bought = S.products.filter(p => inRange(p.buyDate, range));
+  const revenue = sold.reduce((s, p) => s + (p.sellPrice || 0), 0);
+  const fees = sold.reduce((s, p) => s + (p.sellFee || 0), 0);
+  const soldCost = sold.reduce((s, p) => s + cost(p), 0);
+  const prof = revenue - fees - soldCost;
+  const invested = bought.reduce((s, p) => s + cost(p), 0);
+  const days = sold.map(age);
+  return {
+    sold, bought, revenue, fees, soldCost, profit: prof, invested,
+    count: sold.length,
+    ticket: sold.length ? revenue / sold.length : 0,
+    avgProfit: sold.length ? prof / sold.length : 0,
+    margin: revenue ? prof / revenue : NaN,
+    roi: soldCost ? prof / soldCost : NaN,
+    avgDays: days.length ? days.reduce((a, b) => a + b, 0) / days.length : NaN
+  };
+}
+function stock() {
+  const items = S.products.filter(p => !isSold(p));
+  const capital = items.reduce((s, p) => s + cost(p), 0);
+  const listed = items.reduce((s, p) => s + (p.listPrice || 0), 0);
+  const withPrice = items.filter(p => p.listPrice);
+  const potential = withPrice.reduce((s, p) => s + p.listPrice - cost(p), 0);
+  const stale = items.filter(p => age(p) >= (S.settings.staleDays || 30));
+  return { items, capital, listed, potential, stale };
+}
+function cashBalance() {
+  const aportes = S.cash.filter(c => c.type === 'aporte').reduce((s, c) => s + c.amount, 0);
+  const retiradas = S.cash.filter(c => c.type === 'retirada').reduce((s, c) => s + c.amount, 0);
+  const compras = S.products.reduce((s, p) => s + cost(p), 0);
+  const vendas = S.products.filter(isSold).reduce((s, p) => s + net(p), 0);
+  return { aportes, retiradas, compras, vendas, saldo: aportes - retiradas - compras + vendas };
+}
+function delta(cur, prev) {
+  if (!prev) return '';
+  const d = (cur - prev) / Math.abs(prev);
+  const cls = d >= 0 ? 'good' : 'bad';
+  return `<span class="pill ${cls}">${d >= 0 ? '▲' : '▼'} ${pct(Math.abs(d))}</span>`;
+}
+
+/* =========================================================
+   Render: Painel
+   ========================================================= */
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"/></svg>';
+const ICON_WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
+const periodName = { mes: 'este mês', '30d': 'últimos 30 dias', ano: 'este ano', tudo: 'todo o período' };
+const prevName = { mes: 'mês passado', '30d': '30 dias anteriores', ano: 'ano passado' };
+
+function renderDash() {
+  const r = periodRange(ui.period);
+  const st = stats(r);
+  const prev = ui.period !== 'tudo' ? stats(periodRange(ui.period, 1)) : null;
+  const sk = stock();
+  const cb = cashBalance();
+
+  if (!S.products.length) {
+    $('#dash').innerHTML = `
+      <div class="card empty">
+        <b>Bora começar o brick 🧱</b>
+        Cadastre o primeiro produto que você comprou. O app calcula investimento, lucro, margem e tudo mais automaticamente.
+        <div class="stack" style="margin-top:18px">
+          <button class="btn" onclick="openForm()">Adicionar produto</button>
+          <button class="btn secondary" onclick="loadDemo()">Ver com dados de exemplo</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // meta do mês
+  const goal = S.settings.goal || 0;
+  const monthSt = ui.period === 'mes' ? st : stats(periodRange('mes'));
+  const goalPct = goal ? Math.min(1, Math.max(0, monthSt.profit / goal)) : 0;
+
+  let html = '';
+  if (sk.stale.length) {
+    html += `<button class="alert" onclick="go('produtos');setStatus('parados')">${ICON_WARN}<span>${sk.stale.length} ${sk.stale.length === 1 ? 'produto parado' : 'produtos parados'} há mais de ${S.settings.staleDays} dias (${fmt(sk.stale.reduce((s, p) => s + cost(p), 0))} travados). Vale baixar o preço ou repostar.</span></button>`;
+  }
+  html += `
+    <div class="card hero">
+      <div class="label">Lucro líquido · ${periodName[ui.period]}</div>
+      <div class="big num ${st.profit < 0 ? 'neg' : ''}">${fmt(st.profit)}</div>
+      <div class="row">
+        ${prev ? delta(st.profit, prev.profit) + `<span>vs ${prevName[ui.period]} (${fmt(prev.profit)})</span>` : `<span>${st.count} vendas no total</span>`}
+      </div>
+    </div>
+    <div class="grid">
+      <div class="tile"><div class="label">Faturamento</div><div class="v num">${fmt(st.revenue)}</div><div class="h">${st.count} ${st.count === 1 ? 'venda' : 'vendas'}</div></div>
+      <div class="tile"><div class="label">Investido</div><div class="v num">${fmt(st.invested)}</div><div class="h">${st.bought.length} ${st.bought.length === 1 ? 'compra' : 'compras'}</div></div>
+      <div class="tile"><div class="label">Margem</div><div class="v num">${pct(st.margin)}</div><div class="h">lucro ÷ faturamento</div></div>
+      <div class="tile"><div class="label">ROI</div><div class="v num">${pct(st.roi)}</div><div class="h">lucro ÷ custo vendido</div></div>
+      <div class="tile"><div class="label">Ticket médio</div><div class="v num">${fmt(st.ticket)}</div><div class="h">por venda</div></div>
+      <div class="tile"><div class="label">Lucro / item</div><div class="v num">${fmt(st.avgProfit)}</div><div class="h">média por venda</div></div>
+      <div class="tile"><div class="label">Tempo de venda</div><div class="v num">${isFinite(st.avgDays) ? Math.round(st.avgDays) + ' dias' : '—'}</div><div class="h">da compra à venda</div></div>
+      <div class="tile"><div class="label">Taxas/fretes</div><div class="v num">${fmt(st.fees)}</div><div class="h">na venda</div></div>
+    </div>`;
+
+  html += `
+    <div class="card">
+      <h2>Meta de lucro do mês <button class="link" onclick="openGoal()">${goal ? 'Editar' : 'Definir'}</button></h2>
+      ${goal ? `
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <b class="num" style="font-size:20px">${fmt(monthSt.profit)}</b>
+          <span class="muted num">de ${fmt(goal)}</span>
+        </div>
+        <div class="progress"><div style="width:${goalPct * 100}%"></div></div>
+        <div class="small muted">${monthSt.profit >= goal ? 'Meta batida! 🎉' : `Faltam ${fmt(goal - monthSt.profit)} · ${pct(goalPct)} concluído`}</div>
+      ` : `<div class="muted small">Defina quanto quer lucrar por mês e acompanhe o progresso aqui.</div>`}
+    </div>`;
+
+  html += `
+    <div class="card">
+      <h2>Estoque agora <button class="link" onclick="go('produtos');setStatus('abertos')">Ver itens</button></h2>
+      <div class="kv"><span>Itens não vendidos</span><b class="num">${sk.items.length}</b></div>
+      <div class="kv"><span>Capital investido em estoque</span><b class="num">${fmt(sk.capital)}</b></div>
+      <div class="kv"><span>Valor anunciado</span><b class="num">${fmt(sk.listed)}</b></div>
+      <div class="kv"><span>Lucro potencial</span><b class="num ${sk.potential >= 0 ? 'pos' : 'neg'}">${fmt(sk.potential)}</b></div>
+    </div>
+    <div class="card">
+      <h2>Caixa <button class="link" onclick="go('mais')">Detalhes</button></h2>
+      <div class="kv"><span>Saldo em caixa</span><b class="num ${cb.saldo < 0 ? 'neg' : ''}">${fmt(cb.saldo)}</b></div>
+      <div class="kv"><span>Patrimônio (caixa + estoque)</span><b class="num">${fmt(cb.saldo + sk.capital)}</b></div>
+      <div class="kv"><span>Lucro acumulado</span><b class="num">${fmt(stats(periodRange('tudo')).profit)}</b></div>
+      ${!S.cash.length ? `<div class="small muted" style="margin-top:8px">Dica: registre seu capital inicial em <b>Caixa → Aporte</b> para o saldo ficar certinho.</div>` : ''}
+    </div>`;
+
+  const recent = S.products.filter(isSold).sort((a, b) => (b.sellDate || '').localeCompare(a.sellDate || '') || (b.soldAt || 0) - (a.soldAt || 0)).slice(0, 5);
+  if (recent.length) {
+    html += `<div class="card"><h2>Últimas vendas <button class="link" onclick="go('produtos');setStatus('vendido')">Todas</button></h2>
+      ${recent.map(p => `
+        <div class="row-item" onclick="openDetail('${p.id}')">
+          ${thumb(p, 40)}
+          <div class="grow"><div class="t">${esc(p.name)}</div><div class="s">${fmtDate(p.sellDate)} · vendido por ${fmt(p.sellPrice)}</div></div>
+          <div class="r num ${profit(p) >= 0 ? 'pos' : 'neg'}">${profit(p) >= 0 ? '+' : ''}${fmt(profit(p))}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+  $('#dash').innerHTML = html;
+}
+
+/* =========================================================
+   Render: Produtos
+   ========================================================= */
+function thumb(p, size = 56) {
+  const st = `style="width:${size}px;height:${size}px"`;
+  if (p.photo) return `<div class="thumb" ${st}><img src="${p.photo}" alt=""></div>`;
+  const ini = (p.name || '?').trim().slice(0, 1).toUpperCase();
+  return `<div class="thumb" ${st}>${esc(ini)}</div>`;
+}
+function setStatus(s) { ui.status = s; renderProducts(); }
+function renderProducts() {
+  const counts = { todos: S.products.length, abertos: 0, estoque: 0, anunciado: 0, reservado: 0, vendido: 0, parados: 0 };
+  const staleD = S.settings.staleDays || 30;
+  S.products.forEach(p => { counts[p.status]++; if (!isSold(p)) { counts.abertos++; if (age(p) >= staleD) counts.parados++; } });
+  const chipDefs = [['todos', 'Todos'], ['abertos', 'À venda'], ['anunciado', 'Anunciados'], ['estoque', 'Em estoque'], ['reservado', 'Reservados'], ['vendido', 'Vendidos'], ['parados', 'Parados']];
+  $('#statusChips').innerHTML = chipDefs.filter(([k]) => k !== 'parados' || counts.parados).map(([k, l]) =>
+    `<button class="chip ${ui.status === k ? 'on' : ''}" onclick="setStatus('${k}')">${l}<span class="c">${counts[k]}</span></button>`).join('');
+
+  let list = S.products.slice();
+  if (ui.status === 'abertos') list = list.filter(p => !isSold(p));
+  else if (ui.status === 'parados') list = list.filter(p => !isSold(p) && age(p) >= staleD);
+  else if (ui.status !== 'todos') list = list.filter(p => p.status === ui.status);
+  const q = ui.q.trim().toLowerCase();
+  if (q) list = list.filter(p => [p.name, p.category, p.platform, p.notes, p.buyer].join(' ').toLowerCase().includes(q));
+  const sorters = {
+    recent: (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
+    old: (a, b) => (a.buyDate || '').localeCompare(b.buyDate || ''),
+    profit: (a, b) => expProfit(b) - expProfit(a),
+    price: (a, b) => (b.sellPrice || b.listPrice || 0) - (a.sellPrice || a.listPrice || 0),
+    name: (a, b) => a.name.localeCompare(b.name, 'pt-BR')
+  };
+  list.sort(sorters[ui.sort]);
+
+  if (!list.length) {
+    $('#plist').innerHTML = S.products.length
+      ? `<div class="empty"><b>Nada por aqui</b>Nenhum produto com esse filtro.</div>`
+      : `<div class="empty"><b>Nenhum produto ainda</b>Toque no <b style="display:inline;color:var(--accent)">+</b> para cadastrar o primeiro.</div>`;
+    return;
+  }
+  $('#plist').innerHTML = list.map(p => {
+    const sold = isSold(p);
+    const pr = expProfit(p);
+    const priceTxt = sold ? `Vendido ${fmt(p.sellPrice)}` : (p.listPrice ? `Anúncio ${fmt(p.listPrice)}` : 'Sem preço');
+    return `
+    <div class="pitem">
+      <div onclick="openDetail('${p.id}')" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0">
+        ${thumb(p)}
+        <div class="pbody">
+          <div class="pname">${esc(p.name)}</div>
+          <div class="pmeta"><span class="badge st-${p.status}">${STATUS[p.status]}</span>${p.category ? `<span>${esc(p.category)}</span>` : ''}<span class="dot"></span><span>${age(p)}d</span></div>
+          <div class="pnums num"><span class="muted">Custo ${fmt(cost(p))}</span><span>${priceTxt}</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <button class="check ${sold ? 'done' : ''}" aria-label="${sold ? 'Vendido' : 'Marcar como vendido'}" onclick="toggleSold('${p.id}')">${ICON_CHECK}</button>
+        ${(sold || p.listPrice) ? `<span class="small num ${pr >= 0 ? 'pos' : 'neg'}" style="font-weight:700">${pr >= 0 ? '+' : ''}${fmtK(pr)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+const expProfit = p => isSold(p) ? profit(p) : (p.listPrice ? p.listPrice - cost(p) : -Infinity);
+
+/* =========================================================
+   Render: Relatórios
+   ========================================================= */
+function monthlySeries(n = 6) {
+  const t = toDate(todayStr());
+  const keys = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(t.getFullYear(), t.getMonth() - i, 1);
+    keys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  }
+  return keys.map(k => {
+    const sold = S.products.filter(p => isSold(p) && p.sellDate && ym(p.sellDate) === k);
+    const bought = S.products.filter(p => p.buyDate && ym(p.buyDate) === k);
+    const rev = sold.reduce((s, p) => s + (p.sellPrice || 0), 0);
+    const pr = sold.reduce((s, p) => s + profit(p), 0);
+    return { k, label: ymLabel(k), rev, profit: pr, inv: bought.reduce((s, p) => s + cost(p), 0), count: sold.length, bought: bought.length };
+  });
+}
+function niceMax(v) {
+  if (v <= 0) return 100;
+  const e = Math.pow(10, Math.floor(Math.log10(v)));
+  const f = v / e;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e;
+}
+function barPath(x, y0, w, y1, r) {
+  // barra com ponta arredondada no lado oposto à linha de base
+  const h = Math.abs(y1 - y0);
+  r = Math.min(r, w / 2, h);
+  if (h < 0.5) return '';
+  if (y1 < y0) return `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + w - r}Q${x + w},${y1} ${x + w},${y1 + r}V${y0}Z`;
+  return `M${x},${y0}V${y1 - r}Q${x},${y1} ${x + r},${y1}H${x + w - r}Q${x + w},${y1} ${x + w},${y1 - r}V${y0}Z`;
+}
+function monthlyChart(data) {
+  const W = 340, H = 200, padL = 44, padR = 4, padT = 10, padB = 24;
+  const maxV = niceMax(Math.max(...data.map(d => Math.max(d.rev, d.profit)), 0));
+  const minRaw = Math.min(0, ...data.map(d => d.profit));
+  const minV = minRaw < 0 ? -niceMax(-minRaw) : 0;
+  const y = v => padT + (maxV - v) / (maxV - minV) * (H - padT - padB);
+  const gw = (W - padL - padR) / data.length;
+  const bw = Math.min(18, (gw - 14) / 2);
+  let g = '';
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = minV + (maxV - minV) * i / ticks;
+    g += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)" stroke-width="1" ${Math.abs(v) < 1e-9 ? '' : 'stroke-dasharray="2 3"'}/>`;
+    g += `<text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10" fill="var(--text-3)">${fmtK(v).replace('R$ ', '')}</text>`;
+  }
+  data.forEach((d, i) => {
+    const cx = padL + gw * i + gw / 2;
+    const x1 = cx - bw - 1, x2 = cx + 1;
+    g += `<path d="${barPath(x1, y(0), bw, y(d.rev), 4)}" fill="var(--s1)"/>`;
+    g += `<path d="${barPath(x2, y(0), bw, y(d.profit), 4)}" fill="${d.profit < 0 ? 'var(--bad)' : 'var(--s2)'}"/>`;
+    g += `<text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="var(--text-3)">${d.label.split('/')[0]}</text>`;
+    g += `<rect x="${padL + gw * i}" y="${padT}" width="${gw}" height="${H - padT - padB}" fill="transparent" data-i="${i}" class="hit"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Faturamento e lucro por mês">${g}</svg>`;
+}
+function bindChartTips(wrap, data) {
+  const tip = wrap.querySelector('.tip');
+  const show = e => {
+    const i = +e.target.dataset.i;
+    const d = data[i];
+    const box = wrap.getBoundingClientRect();
+    const r = e.target.getBoundingClientRect();
+    tip.innerHTML = `<b>${d.label}</b>Faturamento ${fmt(d.rev)}<br>Lucro ${fmt(d.profit)}<br>${d.count} vendas · investido ${fmt(d.inv)}`;
+    let x = r.left - box.left + r.width / 2;
+    x = Math.max(90, Math.min(box.width - 90, x));
+    tip.style.left = x + 'px'; tip.style.top = '0px';
+    tip.classList.add('show');
+    wrap.querySelectorAll('.hit').forEach(h => h.setAttribute('fill', h === e.target ? 'rgba(127,127,127,.08)' : 'transparent'));
+  };
+  wrap.querySelectorAll('.hit').forEach(h => { h.addEventListener('pointerenter', show); h.addEventListener('click', show); });
+  wrap.addEventListener('pointerleave', () => { tip.classList.remove('show'); wrap.querySelectorAll('.hit').forEach(h => h.setAttribute('fill', 'transparent')); });
+}
+function groupBy(key, list) {
+  const m = new Map();
+  list.forEach(p => {
+    const k = p[key] || 'Sem ' + (key === 'category' ? 'categoria' : 'plataforma');
+    const o = m.get(k) || { k, count: 0, rev: 0, profit: 0, cost: 0, days: 0 };
+    o.count++; o.rev += p.sellPrice || 0; o.profit += profit(p); o.cost += cost(p); o.days += age(p);
+    m.set(k, o);
+  });
+  return [...m.values()].sort((a, b) => b.profit - a.profit);
+}
+function hbars(rows) {
+  const max = Math.max(...rows.map(r => Math.abs(r.profit)), 1);
+  return rows.map(r => `
+    <div class="hbar">
+      <div class="top-l"><span>${esc(r.k)} <span class="muted">· ${r.count} ${r.count === 1 ? 'venda' : 'vendas'} · ${Math.round(r.days / r.count)}d</span></span><b class="num ${r.profit < 0 ? 'neg' : ''}">${fmt(r.profit)}</b></div>
+      <div class="track"><div class="fill ${r.profit < 0 ? 'neg' : ''}" style="width:${Math.abs(r.profit) / max * 100}%"></div></div>
+    </div>`).join('');
+}
+function renderReports() {
+  const sold = S.products.filter(isSold);
+  if (!S.products.length) {
+    $('#reports').innerHTML = `<div class="empty"><b>Sem dados ainda</b>Os relatórios aparecem quando você cadastrar produtos e vendas.</div>`;
+    return;
+  }
+  const data = monthlySeries(6);
+  const all = stats(periodRange('tudo'));
+  const sk = stock();
+  let html = `
+    <div class="card">
+      <h2>Faturamento e lucro · 6 meses</h2>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Faturamento</span><span><i style="background:var(--s2)"></i>Lucro</span></div>
+      <div class="chart-wrap" id="mchart"><div class="tip"></div>${monthlyChart(data)}</div>
+    </div>
+    <div class="card">
+      <h2>Mês a mês</h2>
+      <div class="scroll-x"><table class="t num">
+        <tr><th>Mês</th><th>Investido</th><th>Faturado</th><th>Lucro</th><th>Vendas</th><th>Margem</th></tr>
+        ${data.slice().reverse().map(d => `<tr><td>${d.label}</td><td>${fmtK(d.inv)}</td><td>${fmtK(d.rev)}</td><td class="${d.profit < 0 ? 'neg' : d.profit > 0 ? 'pos' : ''}">${fmtK(d.profit)}</td><td>${d.count}</td><td>${d.rev ? pct(d.profit / d.rev) : '—'}</td></tr>`).join('')}
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>Resumo geral</h2>
+      <div class="kv"><span>Total investido (todas as compras)</span><b class="num">${fmt(S.products.reduce((s, p) => s + cost(p), 0))}</b></div>
+      <div class="kv"><span>Faturamento total</span><b class="num">${fmt(all.revenue)}</b></div>
+      <div class="kv"><span>Lucro líquido total</span><b class="num ${all.profit < 0 ? 'neg' : 'pos'}">${fmt(all.profit)}</b></div>
+      <div class="kv"><span>Produtos comprados / vendidos</span><b class="num">${S.products.length} / ${sold.length}</b></div>
+      <div class="kv"><span>Taxa de venda</span><b class="num">${pct(sold.length / S.products.length)}</b></div>
+      <div class="kv"><span>Margem média</span><b class="num">${pct(all.margin)}</b></div>
+      <div class="kv"><span>ROI médio</span><b class="num">${pct(all.roi)}</b></div>
+      <div class="kv"><span>Tempo médio de venda</span><b class="num">${isFinite(all.avgDays) ? Math.round(all.avgDays) + ' dias' : '—'}</b></div>
+      <div class="kv"><span>Lucro por dia de estoque</span><b class="num">${sold.length ? fmt(all.profit / Math.max(1, sold.reduce((s, p) => s + Math.max(1, age(p)), 0))) : '—'}</b></div>
+      <div class="kv"><span>Vendas com prejuízo</span><b class="num">${sold.filter(p => profit(p) < 0).length}</b></div>
+      <div class="kv"><span>Capital parado em estoque</span><b class="num">${fmt(sk.capital)}</b></div>
+    </div>`;
+  if (sold.length) {
+    html += `<div class="card"><h2>Lucro por categoria</h2>${hbars(groupBy('category', sold))}</div>`;
+    html += `<div class="card"><h2>Lucro por plataforma</h2>${hbars(groupBy('platform', sold))}</div>`;
+    const top = sold.slice().sort((a, b) => profit(b) - profit(a)).slice(0, 5);
+    html += `<div class="card"><h2>Mais lucrativos</h2>${top.map(p => rowProfit(p)).join('')}</div>`;
+    const fast = sold.slice().sort((a, b) => age(a) - age(b)).slice(0, 5);
+    html += `<div class="card"><h2>Vendidos mais rápido</h2>${fast.map(p => `
+      <div class="row-item" onclick="openDetail('${p.id}')">${thumb(p, 40)}<div class="grow"><div class="t">${esc(p.name)}</div><div class="s">${esc(p.category || '')}</div></div><div class="r num">${age(p)} ${age(p) === 1 ? 'dia' : 'dias'}</div></div>`).join('')}</div>`;
+    const worst = sold.filter(p => profit(p) < 0);
+    if (worst.length) html += `<div class="card"><h2>Vendas no prejuízo</h2>${worst.map(p => rowProfit(p)).join('')}</div>`;
+  }
+  if (sk.stale.length) {
+    html += `<div class="card"><h2>Parados há ${S.settings.staleDays}+ dias</h2>${sk.stale.sort((a, b) => age(b) - age(a)).map(p => `
+      <div class="row-item" onclick="openDetail('${p.id}')">${thumb(p, 40)}<div class="grow"><div class="t">${esc(p.name)}</div><div class="s">custo ${fmt(cost(p))}</div></div><div class="r num neg">${age(p)} dias</div></div>`).join('')}</div>`;
+  }
+  $('#reports').innerHTML = html;
+  bindChartTips($('#mchart'), data);
+}
+const rowProfit = p => `
+  <div class="row-item" onclick="openDetail('${p.id}')">${thumb(p, 40)}
+    <div class="grow"><div class="t">${esc(p.name)}</div><div class="s">${fmt(cost(p))} → ${fmt(p.sellPrice)} · ${pct(profit(p) / (cost(p) || 1))} ROI</div></div>
+    <div class="r num ${profit(p) >= 0 ? 'pos' : 'neg'}">${profit(p) >= 0 ? '+' : ''}${fmt(profit(p))}</div>
+  </div>`;
+
+/* =========================================================
+   Render: Caixa / Mais
+   ========================================================= */
+function renderMore() {
+  const cb = cashBalance();
+  const sk = stock();
+  const moves = [
+    ...S.cash.map(c => ({ date: c.date, t: c.type === 'aporte' ? 'Aporte' : 'Retirada', s: c.note || '', v: c.type === 'aporte' ? c.amount : -c.amount, id: c.id, kind: 'cash' })),
+    ...S.products.map(p => ({ date: p.buyDate, t: 'Compra', s: p.name, v: -cost(p), pid: p.id })),
+    ...S.products.filter(isSold).map(p => ({ date: p.sellDate, t: 'Venda', s: p.name, v: net(p), pid: p.id }))
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 30);
+
+  $('#more').innerHTML = `
+    <div class="card hero">
+      <div class="label">Saldo em caixa</div>
+      <div class="big num ${cb.saldo < 0 ? 'neg' : ''}">${fmt(cb.saldo)}</div>
+      <div class="row"><span>Patrimônio total: <b class="num">${fmt(cb.saldo + sk.capital)}</b></span></div>
+      <div class="btns" style="margin-top:14px">
+        <button class="btn small good" style="flex:1" onclick="openCash('aporte')">+ Aporte</button>
+        <button class="btn small secondary" style="flex:1" onclick="openCash('retirada')">− Retirada</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Como o saldo é calculado</h2>
+      <div class="kv"><span>Aportes (dinheiro que você colocou)</span><b class="num">${fmt(cb.aportes)}</b></div>
+      <div class="kv"><span>− Compras de produtos</span><b class="num">${fmt(cb.compras)}</b></div>
+      <div class="kv"><span>+ Vendas (líquidas de taxas)</span><b class="num">${fmt(cb.vendas)}</b></div>
+      <div class="kv"><span>− Retiradas (pró-labore)</span><b class="num">${fmt(cb.retiradas)}</b></div>
+      <div class="kv"><span><b>= Saldo</b></span><b class="num">${fmt(cb.saldo)}</b></div>
+    </div>
+    <div class="card">
+      <h2>Movimentações</h2>
+      ${moves.length ? moves.map(m => `
+        <div class="row-item" ${m.pid ? `onclick="openDetail('${m.pid}')"` : `onclick="delCash('${m.id}')"`}>
+          <div class="grow"><div class="t">${m.t}${m.s ? ` <span class="muted" style="font-weight:500">· ${esc(m.s)}</span>` : ''}</div><div class="s">${fmtDateLong(m.date)}</div></div>
+          <div class="r num ${m.v >= 0 ? 'pos' : ''}">${m.v >= 0 ? '+' : '−'}${fmt(Math.abs(m.v))}</div>
+        </div>`).join('') : '<div class="muted small">Nenhuma movimentação ainda.</div>'}
+    </div>
+    <div class="card">
+      <h2>Configurações</h2>
+      <div class="field"><label>Tema</label>
+        <div class="seg mt0" style="margin:0">
+          <button class="${S.settings.theme !== 'dark' ? 'on' : ''}" onclick="setTheme('light')">Claro</button>
+          <button class="${S.settings.theme === 'dark' ? 'on' : ''}" onclick="setTheme('dark')">Escuro</button>
+        </div>
+      </div>
+      <div class="kv" onclick="openGoal()" style="cursor:pointer"><span>Meta de lucro mensal</span><b class="num">${S.settings.goal ? fmt(S.settings.goal) : 'Definir ›'}</b></div>
+      <div class="kv" onclick="openStale()" style="cursor:pointer"><span>Alerta de produto parado</span><b>${S.settings.staleDays} dias ›</b></div>
+    </div>
+    <div class="card">
+      <h2>Backup e dados</h2>
+      <p class="small muted" style="margin-top:0">Os dados ficam salvos só neste aparelho. Faça backup de vez em quando para não perder nada.</p>
+      <div class="stack">
+        <button class="btn secondary" onclick="exportJSON()">Exportar backup (.json)</button>
+        <button class="btn secondary" onclick="$('#fileImport').click()">Importar backup</button>
+        <button class="btn secondary" onclick="exportCSV()">Exportar planilha (.csv)</button>
+        <button class="btn secondary" onclick="loadDemo()">Carregar dados de exemplo</button>
+        <button class="btn danger" onclick="wipe()">Apagar tudo</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Instalar no celular</h2>
+      <div class="small muted">
+        <b>iPhone (Safari):</b> toque em Compartilhar → “Adicionar à Tela de Início”.<br>
+        <b>Android (Chrome):</b> menu ⋮ → “Instalar app” ou “Adicionar à tela inicial”.
+      </div>
+      ${deferredInstall ? `<button class="btn" style="margin-top:12px" onclick="doInstall()">Instalar agora</button>` : ''}
+    </div>
+    <p class="small muted" style="text-align:center">Brick · v1</p>`;
+}
+
+/* =========================================================
+   Navegação
+   ========================================================= */
+const TITLES = { painel: 'Painel', produtos: 'Produtos', relatorios: 'Relatórios', mais: 'Caixa' };
+function go(v) {
+  ui.view = v;
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
+  document.querySelectorAll('#tabbar button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#hdrTitle').textContent = TITLES[v];
+  window.scrollTo(0, 0);
+  render();
+}
+function render() {
+  const sk = stock();
+  $('#hdrSub').textContent = S.products.length ? `${sk.items.length} à venda · ${S.products.filter(isSold).length} vendidos` : 'Gestão de revenda';
+  if (ui.view === 'painel') renderDash();
+  if (ui.view === 'produtos') renderProducts();
+  if (ui.view === 'relatorios') renderReports();
+  if (ui.view === 'mais') renderMore();
+}
+function commit(msg, undo) { save(); render(); if (msg) toast(msg, undo); }
+
+/* =========================================================
+   Sheet (bottom modal)
+   ========================================================= */
+function openSheet(html) {
+  $('#toast').classList.remove('show');
+  $('#sheet').innerHTML = '<div class="grab"></div>' + html;
+  $('#sheet').scrollTop = 0;
+  $('#backdrop').classList.add('show');
+  $('#sheet').classList.add('show');
+}
+function closeSheet() {
+  $('#backdrop').classList.remove('show');
+  $('#sheet').classList.remove('show');
+  document.activeElement && document.activeElement.blur && document.activeElement.blur();
+}
+$('#backdrop').addEventListener('click', closeSheet);
+const sheetHead = t => `<h3>${t}<button onclick="closeSheet()" aria-label="Fechar">×</button></h3>`;
+const moneyField = (id, label, val, hint = '') => `
+  <div class="field"><label for="${id}">${label}</label>
+    <div class="money"><input id="${id}" inputmode="decimal" placeholder="0,00" value="${moneyIn(val)}" autocomplete="off"></div>
+    ${hint ? `<div class="hint">${hint}</div>` : ''}
+  </div>`;
+
+/* ---------- Formulário de produto ---------- */
+let formPhoto = null, formStatus = 'anunciado';
+function openForm(id) {
+  const p = id ? S.products.find(x => x.id === id) : null;
+  formPhoto = p ? p.photo || null : null;
+  formStatus = p ? p.status : 'anunciado';
+  const cats = [...new Set([...S.settings.cats, ...S.products.map(x => x.category).filter(Boolean)])];
+  openSheet(`
+    ${sheetHead(p ? 'Editar produto' : 'Novo produto')}
+    <div class="field photo-pick">
+      <label class="thumb" id="fPhotoBox" for="fPhoto" style="cursor:pointer;margin:0">${formPhoto ? `<img src="${formPhoto}">` : '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="4"/></svg>'}</label>
+      <div class="small muted">Toque para adicionar uma foto (opcional)<br><button type="button" class="link" style="border:0;background:none;color:var(--bad);padding:4px 0;font-weight:600;${formPhoto ? '' : 'display:none'}" id="fPhotoDel" onclick="formPhoto=null;$('#fPhotoBox').innerHTML='+';this.style.display='none'">Remover foto</button></div>
+      <input type="file" id="fPhoto" accept="image/*" hidden>
+    </div>
+    <div class="field"><label for="fName">Nome do produto *</label><input id="fName" placeholder="Ex.: iPhone 11 64GB" value="${esc(p?.name)}" autocomplete="off"></div>
+    <div class="two">
+      <div class="field"><label for="fCat">Categoria</label><input id="fCat" list="catList" placeholder="Escolha ou digite" value="${esc(p?.category)}" autocomplete="off"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+      <div class="field"><label for="fPlat">Onde anunciou</label><select id="fPlat">${PLATFORMS.map(x => `<option ${((p?.platform) || 'Facebook Marketplace') === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    </div>
+
+    <div class="section-t">Compra (investimento)</div>
+    <div class="two">
+      ${moneyField('fBuy', 'Quanto pagou *', p?.buyPrice)}
+      ${moneyField('fExtra', 'Custos extras', p?.extraCost, 'frete, conserto, peça…')}
+    </div>
+    <div class="field"><label for="fBuyDate">Data da compra</label><input id="fBuyDate" type="date" value="${p?.buyDate || todayStr()}"></div>
+
+    <div class="section-t">Venda</div>
+    ${moneyField('fList', 'Preço anunciado', p?.listPrice)}
+    <div class="field"><label>Situação</label>
+      <div class="seg-inline" id="fStatus">${Object.entries(STATUS).map(([k, l]) => `<button type="button" data-s="${k}" class="${formStatus === k ? 'on' : ''}">${l.replace('Em estoque', 'Estoque')}</button>`).join('')}</div>
+    </div>
+    <div id="fSoldBox" style="${formStatus === 'vendido' ? '' : 'display:none'}">
+      <div class="two">
+        ${moneyField('fSell', 'Vendeu por', p?.sellPrice)}
+        ${moneyField('fFee', 'Taxas na venda', p?.sellFee, 'frete, entrega, taxa…')}
+      </div>
+      <div class="two">
+        <div class="field"><label for="fSellDate">Data da venda</label><input id="fSellDate" type="date" value="${p?.sellDate || todayStr()}"></div>
+        <div class="field"><label for="fBuyer">Comprador</label><input id="fBuyer" value="${esc(p?.buyer)}" placeholder="opcional" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="preview" id="fPreview"></div>
+    <div class="field"><label for="fNotes">Observações</label><textarea id="fNotes" placeholder="Estado, defeitos, link do anúncio, contato do vendedor…">${esc(p?.notes)}</textarea></div>
+    <button class="btn" onclick="saveForm('${id || ''}')">${p ? 'Salvar alterações' : 'Adicionar produto'}</button>
+  `);
+  const upd = () => {
+    const buy = parseMoney($('#fBuy').value) + parseMoney($('#fExtra').value);
+    const sold = formStatus === 'vendido';
+    const price = sold ? parseMoney($('#fSell').value) - parseMoney($('#fFee').value) : parseMoney($('#fList').value);
+    const pr = price - buy;
+    $('#fPreview').innerHTML = `
+      <div class="kv"><span>Investimento</span><b class="num">${fmt(buy)}</b></div>
+      <div class="kv"><span>${sold ? 'Lucro' : 'Lucro esperado'}</span><b class="num ${price ? (pr >= 0 ? 'pos' : 'neg') : ''}">${price ? fmt(pr) : '—'}</b></div>
+      <div class="kv"><span>Margem · ROI</span><b class="num">${price ? pct(pr / (sold ? parseMoney($('#fSell').value) || 1 : price)) + ' · ' + pct(buy ? pr / buy : NaN) : '—'}</b></div>`;
+  };
+  $('#sheet').querySelectorAll('input').forEach(i => i.addEventListener('input', upd));
+  $('#fStatus').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    formStatus = b.dataset.s;
+    $('#fStatus').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    $('#fSoldBox').style.display = formStatus === 'vendido' ? '' : 'none';
+    if (formStatus === 'vendido' && !$('#fSell').value) $('#fSell').value = $('#fList').value;
+    upd();
+  });
+  $('#fPhoto').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    formPhoto = await compressImage(f);
+    $('#fPhotoBox').innerHTML = `<img src="${formPhoto}">`;
+    $('#fPhotoDel').style.display = '';
+  });
+  upd();
+  if (!p) setTimeout(() => $('#fName').focus(), 300);
+}
+function saveForm(id) {
+  const name = $('#fName').value.trim();
+  const buyPrice = parseMoney($('#fBuy').value);
+  if (!name) { $('#fName').focus(); return toast('Coloque o nome do produto'); }
+  const data = {
+    name,
+    category: $('#fCat').value.trim(),
+    platform: $('#fPlat').value,
+    buyPrice,
+    extraCost: parseMoney($('#fExtra').value),
+    buyDate: $('#fBuyDate').value || todayStr(),
+    listPrice: parseMoney($('#fList').value),
+    status: formStatus,
+    notes: $('#fNotes').value.trim(),
+    photo: formPhoto
+  };
+  if (formStatus === 'vendido') {
+    data.sellPrice = parseMoney($('#fSell').value) || data.listPrice;
+    data.sellFee = parseMoney($('#fFee').value);
+    data.sellDate = $('#fSellDate').value || todayStr();
+    data.buyer = $('#fBuyer').value.trim();
+  } else { data.sellPrice = 0; data.sellFee = 0; data.sellDate = ''; data.buyer = ''; }
+  if (id) {
+    Object.assign(S.products.find(x => x.id === id), data);
+    closeSheet(); commit('Produto atualizado');
+  } else {
+    S.products.unshift({ id: uid(), createdAt: Date.now(), ...data });
+    closeSheet(); commit(`Adicionado · ${fmt(cost(data))} no investimento`);
+  }
+}
+function compressImage(file, max = 640, q = 0.72) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => res(null);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* ---------- Marcar como vendido (o "check") ---------- */
+function toggleSold(id) {
+  const p = S.products.find(x => x.id === id);
+  if (isSold(p)) {
+    openSheet(`${sheetHead('Desfazer venda?')}
+      <p class="muted" style="margin-top:0">“${esc(p.name)}” volta para <b>Anunciado</b> e o lucro de ${fmt(profit(p))} sai dos relatórios.</p>
+      <div class="btns"><button class="btn secondary" onclick="closeSheet()">Cancelar</button><button class="btn danger" onclick="unsell('${id}')">Desfazer venda</button></div>`);
+    return;
+  }
+  openSheet(`${sheetHead('Marcar como vendido')}
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${thumb(p, 48)}<div><b>${esc(p.name)}</b><div class="small muted">Custo ${fmt(cost(p))} · ${age(p)} ${age(p) === 1 ? 'dia' : 'dias'} em estoque</div></div></div>
+    ${moneyField('sSell', 'Vendeu por', p.listPrice)}
+    <div class="two">
+      ${moneyField('sFee', 'Taxas / frete', 0)}
+      <div class="field"><label for="sDate">Data</label><input id="sDate" type="date" value="${todayStr()}"></div>
+    </div>
+    <div class="preview" id="sPrev"></div>
+    <button class="btn good" onclick="confirmSell('${id}')">${ICON_CHECK.replace('<svg', '<svg width="20" height="20"')} Confirmar venda</button>`);
+  const upd = () => {
+    const pr = parseMoney($('#sSell').value) - parseMoney($('#sFee').value) - cost(p);
+    $('#sPrev').innerHTML = `<div class="kv"><span>Lucro nessa venda</span><b class="num ${pr >= 0 ? 'pos' : 'neg'}" style="font-size:18px">${fmt(pr)}</b></div><div class="kv"><span>ROI</span><b class="num">${pct(cost(p) ? pr / cost(p) : NaN)}</b></div>`;
+  };
+  $('#sheet').querySelectorAll('input').forEach(i => i.addEventListener('input', upd));
+  upd();
+}
+function confirmSell(id) {
+  const p = S.products.find(x => x.id === id);
+  const before = { ...p };
+  p.sellPrice = parseMoney($('#sSell').value);
+  p.sellFee = parseMoney($('#sFee').value);
+  p.sellDate = $('#sDate').value || todayStr();
+  p.status = 'vendido';
+  p.soldAt = Date.now();
+  closeSheet();
+  const pr = profit(p);
+  commit(`Vendido! ${pr >= 0 ? '+' : ''}${fmt(pr)} de lucro`, () => { Object.assign(p, before); commit('Venda desfeita'); });
+}
+function unsell(id) {
+  const p = S.products.find(x => x.id === id);
+  Object.assign(p, { status: 'anunciado', sellPrice: 0, sellFee: 0, sellDate: '', buyer: '' });
+  closeSheet(); commit('Venda desfeita');
+}
+
+/* ---------- Detalhe ---------- */
+function openDetail(id) {
+  const p = S.products.find(x => x.id === id); if (!p) return;
+  const sold = isSold(p);
+  const pr = sold ? profit(p) : (p.listPrice ? p.listPrice - cost(p) : null);
+  openSheet(`${sheetHead(esc(p.name))}
+    ${p.photo ? `<img class="detail-photo" src="${p.photo}" alt="">` : ''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="badge st-${p.status}">${STATUS[p.status]}</span>
+      ${p.category ? `<span class="badge st-estoque">${esc(p.category)}</span>` : ''}
+      ${p.platform ? `<span class="badge st-estoque">${esc(p.platform)}</span>` : ''}
+    </div>
+    <div class="grid" style="margin-bottom:6px">
+      <div class="tile"><div class="label">${sold ? 'Lucro' : 'Lucro esperado'}</div><div class="v num ${pr == null ? '' : pr >= 0 ? 'pos' : 'neg'}">${pr == null ? '—' : fmt(pr)}</div><div class="h">${pr == null ? 'defina o preço' : 'ROI ' + pct(cost(p) ? pr / cost(p) : NaN)}</div></div>
+      <div class="tile"><div class="label">${sold ? 'Vendeu em' : 'Em estoque há'}</div><div class="v num">${age(p)} ${age(p) === 1 ? 'dia' : 'dias'}</div><div class="h">desde ${fmtDate(p.buyDate)}</div></div>
+    </div>
+    <div class="kv"><span>Pagou</span><b class="num">${fmt(p.buyPrice)}</b></div>
+    ${p.extraCost ? `<div class="kv"><span>Custos extras</span><b class="num">${fmt(p.extraCost)}</b></div>` : ''}
+    <div class="kv"><span>Investimento total</span><b class="num">${fmt(cost(p))}</b></div>
+    <div class="kv"><span>Preço anunciado</span><b class="num">${p.listPrice ? fmt(p.listPrice) : '—'}</b></div>
+    ${sold ? `
+      <div class="kv"><span>Vendido por</span><b class="num">${fmt(p.sellPrice)}</b></div>
+      ${p.sellFee ? `<div class="kv"><span>Taxas na venda</span><b class="num">${fmt(p.sellFee)}</b></div>` : ''}
+      <div class="kv"><span>Data da venda</span><b>${fmtDateLong(p.sellDate)}</b></div>
+      ${p.buyer ? `<div class="kv"><span>Comprador</span><b>${esc(p.buyer)}</b></div>` : ''}
+      ${p.listPrice && p.sellPrice !== p.listPrice ? `<div class="kv"><span>Desconto dado</span><b class="num">${fmt(p.listPrice - p.sellPrice)}</b></div>` : ''}
+    ` : ''}
+    <div class="kv"><span>Data da compra</span><b>${fmtDateLong(p.buyDate)}</b></div>
+    ${p.notes ? `<div class="preview" style="margin-top:10px;white-space:pre-wrap">${esc(p.notes)}</div>` : ''}
+    <div class="stack" style="margin-top:14px">
+      ${!sold ? `<button class="btn good" onclick="toggleSold('${p.id}')">Marcar como vendido</button>` : ''}
+      ${!sold ? `<div class="btns" style="margin:0">${['estoque', 'anunciado', 'reservado'].filter(s => s !== p.status).map(s => `<button class="btn secondary small" style="flex:1" onclick="setProdStatus('${p.id}','${s}')">→ ${STATUS[s]}</button>`).join('')}</div>` : ''}
+      <div class="btns" style="margin:0">
+        <button class="btn secondary" onclick="openForm('${p.id}')">Editar</button>
+        <button class="btn secondary" onclick="duplicate('${p.id}')">Duplicar</button>
+      </div>
+      ${sold ? `<button class="btn secondary" onclick="toggleSold('${p.id}')">Desfazer venda</button>` : ''}
+      <button class="btn danger" onclick="delProduct('${p.id}')">Excluir produto</button>
+    </div>`);
+}
+function setProdStatus(id, s) { S.products.find(x => x.id === id).status = s; closeSheet(); commit('Status: ' + STATUS[s]); }
+function duplicate(id) {
+  const p = S.products.find(x => x.id === id);
+  const c = { ...p, id: uid(), createdAt: Date.now(), status: 'anunciado', sellPrice: 0, sellFee: 0, sellDate: '', buyer: '', buyDate: todayStr() };
+  S.products.unshift(c); closeSheet(); commit('Produto duplicado'); openForm(c.id);
+}
+function delProduct(id) {
+  const i = S.products.findIndex(x => x.id === id);
+  const [p] = S.products.splice(i, 1);
+  closeSheet();
+  commit('Produto excluído', () => { S.products.splice(i, 0, p); commit('Restaurado'); });
+}
+
+/* ---------- Caixa, meta, configurações ---------- */
+function openCash(type) {
+  openSheet(`${sheetHead(type === 'aporte' ? 'Aporte (colocar dinheiro)' : 'Retirada (tirar dinheiro)')}
+    <p class="small muted" style="margin-top:0">${type === 'aporte' ? 'Dinheiro do seu bolso que entra no brick — ex.: capital inicial.' : 'Dinheiro que você tira do brick para você (seu “salário”).'}</p>
+    ${moneyField('cAmt', 'Valor', '')}
+    <div class="field"><label for="cDate">Data</label><input id="cDate" type="date" value="${todayStr()}"></div>
+    <div class="field"><label for="cNote">Descrição</label><input id="cNote" placeholder="${type === 'aporte' ? 'Capital inicial' : 'Pró-labore'}" autocomplete="off"></div>
+    <button class="btn ${type === 'aporte' ? 'good' : ''}" onclick="saveCash('${type}')">Salvar</button>`);
+  setTimeout(() => $('#cAmt').focus(), 300);
+}
+function saveCash(type) {
+  const amount = parseMoney($('#cAmt').value);
+  if (!amount) return toast('Informe o valor');
+  S.cash.push({ id: uid(), type, amount, date: $('#cDate').value || todayStr(), note: $('#cNote').value.trim() });
+  closeSheet(); commit(type === 'aporte' ? 'Aporte registrado' : 'Retirada registrada');
+}
+function delCash(id) {
+  const c = S.cash.find(x => x.id === id);
+  openSheet(`${sheetHead(c.type === 'aporte' ? 'Aporte' : 'Retirada')}
+    <div class="kv"><span>Valor</span><b class="num">${fmt(c.amount)}</b></div>
+    <div class="kv"><span>Data</span><b>${fmtDateLong(c.date)}</b></div>
+    ${c.note ? `<div class="kv"><span>Descrição</span><b>${esc(c.note)}</b></div>` : ''}
+    <button class="btn danger" style="margin-top:12px" onclick="S.cash=S.cash.filter(x=>x.id!=='${id}');closeSheet();commit('Movimentação excluída')">Excluir</button>`);
+}
+function openGoal() {
+  openSheet(`${sheetHead('Meta de lucro mensal')}
+    ${moneyField('gAmt', 'Quanto quer lucrar por mês?', S.settings.goal || '')}
+    <button class="btn" onclick="S.settings.goal=parseMoney($('#gAmt').value);closeSheet();commit('Meta salva')">Salvar meta</button>`);
+}
+function openStale() {
+  openSheet(`${sheetHead('Alerta de produto parado')}
+    <div class="field"><label for="stD">Avisar quando um produto estiver há quantos dias sem vender?</label><input id="stD" type="number" inputmode="numeric" min="1" value="${S.settings.staleDays}"></div>
+    <button class="btn" onclick="S.settings.staleDays=Math.max(1,parseInt($('#stD').value)||30);closeSheet();commit('Salvo')">Salvar</button>`);
+}
+function setTheme(t) {
+  S.settings.theme = t; applyTheme(); commit();
+}
+function applyTheme() {
+  const t = S.settings.theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = t;
+  document.querySelector('meta[name=theme-color]').content = t === 'dark' ? '#0b0c0f' : '#ffffff';
+}
+
+/* ---------- Backup ---------- */
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function exportJSON() { download(`brick-backup-${todayStr()}.json`, JSON.stringify(S), 'application/json'); toast('Backup exportado'); }
+function exportCSV() {
+  const cols = ['Nome', 'Categoria', 'Plataforma', 'Status', 'Data compra', 'Pagou', 'Custos extras', 'Investimento', 'Preço anunciado', 'Data venda', 'Vendeu por', 'Taxas', 'Lucro', 'Dias', 'Comprador', 'Observações'];
+  const n = v => (v || 0).toFixed(2).replace('.', ',');
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = S.products.map(p => [p.name, p.category, p.platform, STATUS[p.status], p.buyDate, n(p.buyPrice), n(p.extraCost), n(cost(p)), n(p.listPrice), p.sellDate, isSold(p) ? n(p.sellPrice) : '', isSold(p) ? n(p.sellFee) : '', isSold(p) ? n(profit(p)) : '', age(p), p.buyer, p.notes].map(q).join(';'));
+  download(`brick-produtos-${todayStr()}.csv`, '﻿' + [cols.map(q).join(';'), ...rows].join('\n'), 'text/csv');
+  toast('Planilha exportada');
+}
+$('#fileImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!Array.isArray(d.products)) throw 0;
+    S = { ...S, ...d, settings: { ...S.settings, ...(d.settings || {}) } };
+    S.cash = S.cash || [];
+    applyTheme(); commit(`Backup importado · ${S.products.length} produtos`);
+  } catch (err) { toast('Arquivo inválido'); }
+  e.target.value = '';
+});
+function wipe() {
+  openSheet(`${sheetHead('Apagar tudo?')}
+    <p class="muted" style="margin-top:0">Todos os produtos, vendas e movimentações deste aparelho serão apagados. Faça um backup antes se quiser guardar.</p>
+    <div class="btns"><button class="btn secondary" onclick="closeSheet()">Cancelar</button><button class="btn danger" onclick="S.products=[];S.cash=[];closeSheet();commit('Tudo apagado')">Apagar</button></div>`);
+}
+function loadDemo() {
+  const doIt = () => {
+    const t = toDate(todayStr());
+    const d = n => { const x = new Date(t); x.setDate(x.getDate() - n); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
+    const mk = (name, category, buy, extra, bAgo, list, sell, sAgo, fee = 0, platform = 'Facebook Marketplace') => ({
+      id: uid(), createdAt: Date.now() - bAgo * 864e5, name, category, platform, buyPrice: buy, extraCost: extra, buyDate: d(bAgo), listPrice: list,
+      status: sell ? 'vendido' : (bAgo > 40 ? 'anunciado' : bAgo < 3 ? 'estoque' : 'anunciado'), sellPrice: sell || 0, sellFee: fee, sellDate: sell ? d(sAgo) : '', buyer: '', notes: '', photo: null
+    });
+    S.products = [
+      mk('iPhone 11 64GB', 'Celulares', 1100, 80, 160, 1650, 1600, 150),
+      mk('PS4 Slim + 2 controles', 'Games', 900, 0, 140, 1350, 1300, 128),
+      mk('Bicicleta Caloi aro 29', 'Bicicletas', 500, 60, 120, 900, 850, 105, 0, 'OLX'),
+      mk('Air Fryer Mondial', 'Eletrodomésticos', 120, 0, 110, 230, 220, 101),
+      mk('Notebook Dell i5', 'Informática', 1400, 150, 95, 2200, 2100, 80, 50),
+      mk('Tênis Nike Air Max', 'Roupas e tênis', 180, 20, 88, 380, 350, 74, 0, 'Instagram'),
+      mk('Samsung A52', 'Celulares', 650, 40, 70, 1050, 980, 52),
+      mk('Furadeira Bosch', 'Ferramentas', 150, 0, 60, 280, 260, 50, 0, 'OLX'),
+      mk('Xbox One S', 'Games', 800, 0, 50, 1250, 1180, 33, 30),
+      mk('Monitor LG 24"', 'Informática', 350, 0, 40, 600, 330, 30),
+      mk('Cadeira gamer', 'Móveis', 250, 30, 30, 520, 500, 18),
+      mk('iPhone XR 128GB', 'Celulares', 950, 120, 22, 1500, 1450, 9),
+      mk('Nintendo Switch', 'Games', 1300, 0, 14, 1900, 1850, 5, 40),
+      mk('Geladeira Brastemp', 'Eletrodomésticos', 600, 120, 48, 1200),
+      mk('Smart TV 43" Samsung', 'Eletrônicos', 900, 0, 10, 1400),
+      mk('MacBook Air 2017', 'Informática', 1600, 200, 6, 2600),
+      mk('Patinete elétrico', 'Outros', 700, 80, 2, 1200),
+      mk('JBL Charge 4', 'Eletrônicos', 250, 0, 1, 450)
+    ];
+    S.cash = [{ id: uid(), type: 'aporte', amount: 3000, date: d(165), note: 'Capital inicial' }, { id: uid(), type: 'retirada', amount: 800, date: d(20), note: 'Pró-labore' }];
+    S.settings.goal = 1500;
+    closeSheet(); go('painel'); commit('Dados de exemplo carregados');
+  };
+  if (S.products.length) {
+    openSheet(`${sheetHead('Substituir dados?')}<p class="muted" style="margin-top:0">Os dados de exemplo vão substituir os produtos atuais.</p>
+      <div class="btns"><button class="btn secondary" onclick="closeSheet()">Cancelar</button><button class="btn danger" id="demoOk">Substituir</button></div>`);
+    $('#demoOk').onclick = doIt;
+  } else doIt();
+}
+
+/* ---------- Toast ---------- */
+let toastT = null;
+function toast(msg, undo) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button>Desfazer</button>' : ''}`;
+  if (undo) el.querySelector('button').onclick = () => { el.classList.remove('show'); undo(); };
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), undo ? 5000 : 2400);
+}
+
+/* ---------- Instalação PWA ---------- */
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (ui.view === 'mais') renderMore(); });
+function doInstall() { deferredInstall && deferredInstall.prompt(); deferredInstall = null; }
+
+/* =========================================================
+   Eventos e inicialização
+   ========================================================= */
+$('#tabbar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'addBtn') return openForm();
+  go(b.dataset.v);
+});
+$('#periodSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  ui.period = b.dataset.p;
+  $('#periodSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  renderDash();
+});
+$('#q').addEventListener('input', e => { ui.q = e.target.value; renderProducts(); });
+$('#sort').addEventListener('change', e => { ui.sort = e.target.value; renderProducts(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+(async function init() {
+  const saved = await loadState();
+  if (saved) S = { ...S, ...saved, settings: { ...S.settings, ...(saved.settings || {}) } };
+  applyTheme();
+  render();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
