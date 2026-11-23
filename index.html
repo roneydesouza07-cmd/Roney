@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR" data-app-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
 <title>Brick</title>
 <meta name="description" content="Gestão de revenda: compras, vendas, lucro e estoque.">
 <meta name="theme-color" content="#ffffff">
@@ -40,7 +41,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 }
-:root[data-theme="dark"] {
+:root[data-app-theme="dark"] {
   color-scheme: dark;
   --bg: #0b0c0f;
   --surface: #15171c;
@@ -79,12 +80,12 @@ button { cursor: pointer; }
   position: sticky; top: 0; z-index: 20;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px);
-  padding: calc(var(--safe-t) + 12px) 16px 10px;
+  padding-block: calc(var(--safe-t) + 12px) 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
 .top h1 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
 .top .sub { font-size: 13px; color: var(--text-3); }
-main { padding: 0 16px; max-width: 720px; margin: 0 auto; }
+main { padding-block: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 720px; margin: 0 auto; }
 .view { display: none; }
 .view.active { display: block; animation: fade .18s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
@@ -187,7 +188,7 @@ table.t td:first-child, table.t th:first-child { text-align: left; }
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: saturate(180%) blur(14px); -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-top: 1px solid var(--border);
-  padding-bottom: var(--safe-b);
+  padding-bottom: var(--safe-b); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
   display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--tabbar-h) + var(--safe-b));
 }
 .tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--text-3); }
@@ -202,7 +203,7 @@ table.t td:first-child, table.t th:first-child { text-align: left; }
 .backdrop.show { opacity: 1; pointer-events: auto; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-height: 92dvh; overflow-y: auto;
-  background: var(--surface); border-radius: 22px 22px 0 0; padding: 8px 16px calc(20px + var(--safe-b));
+  background: var(--surface); border-radius: 22px 22px 0 0; padding-block: 8px calc(20px + var(--safe-b)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   transform: translateY(105%); transition: transform .25s cubic-bezier(.2,.8,.2,1); max-width: 720px; margin: 0 auto;
 }
 .sheet.show { transform: none; }
@@ -241,7 +242,7 @@ table.t td:first-child, table.t th:first-child { text-align: left; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 14px); transform: translate(-50%, 20px); background: var(--text); color: var(--bg); padding: 11px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 60; opacity: 0; pointer-events: none; transition: all .2s; display: flex; gap: 14px; align-items: center; max-width: calc(100% - 32px); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 800; padding: 0; }
-:root[data-theme="light"] .toast button { color: #8fb4ff; }
+:root[data-app-theme="light"] .toast button { color: #8fb4ff; }
 .alert { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); color: var(--warn); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; margin-bottom: 12px; font-weight: 600; border: 0; width: 100%; text-align: left; }
 .alert svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
 .muted { color: var(--text-3); }
@@ -357,7 +358,7 @@ async function loadState() {
   return null;
 }
 let saveTimer = null;
-function save() {
+function saveLocal() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
@@ -367,6 +368,82 @@ function save() {
       try { localStorage.setItem('brick-state', JSON.stringify(S)); } catch (e2) { toast('Não foi possível salvar — memória cheia?'); }
     }
   }, 150);
+}
+
+/* Sincronização com a nuvem (quando aberto no claude.ai).
+   Cada produto e cada movimentação de caixa é um documento; só o que mudou é gravado. */
+let remote = null;
+let loading = false;
+let localBackup = null;
+const synced = { products: new Map(), cash: new Map(), settings: '' };
+let writeChain = Promise.resolve();
+function queueWrite(fn) {
+  writeChain = writeChain.then(fn).catch(err => {
+    console.error(err);
+    toast(err && err.code === 'quota_exceeded' ? 'Espaço na nuvem cheio. Exclua fotos ou produtos antigos.' : 'Não foi possível salvar na nuvem. Tente de novo.');
+  });
+}
+function syncRemote() {
+  for (const [col, list] of [['products', S.products], ['cash', S.cash]]) {
+    const seen = new Set();
+    for (const item of list) {
+      seen.add(item.id);
+      const j = JSON.stringify(item);
+      if (synced[col].get(item.id) !== j) {
+        synced[col].set(item.id, j);
+        const body = JSON.parse(j);
+        queueWrite(() => remote.collection(col).doc(item.id).set(body));
+      }
+    }
+    for (const id of [...synced[col].keys()]) {
+      if (!seen.has(id)) { synced[col].delete(id); queueWrite(() => remote.collection(col).doc(id).delete()); }
+    }
+  }
+  const sj = JSON.stringify(S.settings);
+  if (sj !== synced.settings) { synced.settings = sj; const body = JSON.parse(sj); queueWrite(() => remote.doc('config/settings').set(body)); }
+}
+function save() { if (remote) syncRemote(); else saveLocal(); }
+
+async function connectRemote() {
+  if (!window.claude || typeof window.claude.use !== 'function') return false;
+  let db = null;
+  try { db = await window.claude.use('db'); } catch (e) {}
+  if (!db) return false;
+  remote = db;
+  loading = true; render();
+  const got = { products: false, cash: false, settings: false };
+  const timer = setTimeout(() => { if (loading) { loading = false; render(); toast('Sem conexão com a nuvem ainda. Os dados aparecem quando conectar.'); } }, 10000);
+  const done = () => {
+    if (got.products && got.cash && got.settings && loading) {
+      loading = false; clearTimeout(timer);
+      migrateLocal();
+      applyTheme(); render();
+    }
+  };
+  const onCol = col => snap => {
+    const items = snap.docs.map(d => JSON.parse(JSON.stringify(d.data())));
+    synced[col] = new Map(items.map(it => [it.id, JSON.stringify(it)]));
+    S[col] = col === 'products' ? items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) : items;
+    if (!snap.metadata.fromCache) got[col] = true;
+    if (!loading) render(); else done();
+  };
+  const onErr = e => { console.error(e); clearTimeout(timer); loading = false; render(); toast('Erro ao carregar os dados da nuvem.'); };
+  db.collection('products').onSnapshot(onCol('products'), onErr);
+  db.collection('cash').onSnapshot(onCol('cash'), onErr);
+  db.doc('config/settings').onSnapshot(snap => {
+    if (snap.exists) { const d = JSON.parse(JSON.stringify(snap.data())); synced.settings = JSON.stringify(d); S.settings = { ...S.settings, ...d }; applyTheme(); }
+    if (!snap.metadata.fromCache) got.settings = true;
+    if (!loading) render(); else done();
+  }, onErr);
+  return true;
+}
+function migrateLocal() {
+  // dados que estavam só neste navegador sobem para a nuvem se ela estiver vazia
+  if (localBackup && localBackup.products && localBackup.products.length && !S.products.length) {
+    S.products = localBackup.products; S.cash = localBackup.cash || [];
+    S.settings = { ...S.settings, ...(localBackup.settings || {}) };
+    syncRemote();
+  }
 }
 
 /* =========================================================
@@ -504,6 +581,7 @@ function renderDash() {
   const sk = stock();
   const cb = cashBalance();
 
+  if (loading) { $('#dash').innerHTML = `<div class="card empty"><b>Carregando seus dados…</b>Buscando produtos e vendas salvos na sua conta.</div>`; return; }
   if (!S.products.length) {
     $('#dash').innerHTML = `
       <div class="card empty">
@@ -853,7 +931,7 @@ function renderMore() {
     </div>
     <div class="card">
       <h2>Backup e dados</h2>
-      <p class="small muted" style="margin-top:0">Os dados ficam salvos só neste aparelho. Faça backup de vez em quando para não perder nada.</p>
+      <p class="small muted" style="margin-top:0">${remote ? 'Seus dados ficam salvos na sua conta Claude e aparecem em qualquer aparelho onde você abrir este link.' : 'Os dados ficam salvos só neste aparelho. Faça backup de vez em quando para não perder nada.'}</p>
       <div class="stack">
         <button class="btn secondary" onclick="exportJSON()">Exportar backup (.json)</button>
         <button class="btn secondary" onclick="$('#fileImport').click()">Importar backup</button>
@@ -863,7 +941,7 @@ function renderMore() {
       </div>
     </div>
     <div class="card">
-      <h2>Instalar no celular</h2>
+      <h2>Atalho no celular</h2>
       <div class="small muted">
         <b>iPhone (Safari):</b> toque em Compartilhar → “Adicionar à Tela de Início”.<br>
         <b>Android (Chrome):</b> menu ⋮ → “Instalar app” ou “Adicionar à tela inicial”.
@@ -1022,7 +1100,7 @@ function saveForm(id) {
     closeSheet(); commit(`Adicionado · ${fmt(cost(data))} no investimento`);
   }
 }
-function compressImage(file, max = 640, q = 0.72) {
+function compressImage(file, max = 560, q = 0.68) {
   return new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -1173,25 +1251,32 @@ function setTheme(t) {
 }
 function applyTheme() {
   const t = S.settings.theme === 'dark' ? 'dark' : 'light';
-  document.documentElement.dataset.theme = t;
+  document.documentElement.dataset.appTheme = t;
   document.querySelector('meta[name=theme-color]').content = t === 'dark' ? '#0b0c0f' : '#ffffff';
 }
 
 /* ---------- Backup ---------- */
-function download(name, content, type) {
+async function download(name, content, type) {
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+    if (dl) {
+      try { const r = await dl.save({ filename: name, data: content }); if (r.status === 'saved') toast('Arquivo salvo'); }
+      catch (e) { if (e && e.code === 'unavailable') toast('Não foi possível salvar o arquivo aqui'); }
+      return;
+    }
+  } catch (e) {}
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content], { type }));
   a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
-function exportJSON() { download(`brick-backup-${todayStr()}.json`, JSON.stringify(S), 'application/json'); toast('Backup exportado'); }
+function exportJSON() { download(`brick-backup-${todayStr()}.json`, JSON.stringify(S), 'application/json'); }
 function exportCSV() {
   const cols = ['Nome', 'Categoria', 'Plataforma', 'Status', 'Data compra', 'Pagou', 'Custos extras', 'Investimento', 'Preço anunciado', 'Data venda', 'Vendeu por', 'Taxas', 'Lucro', 'Dias', 'Comprador', 'Observações'];
   const n = v => (v || 0).toFixed(2).replace('.', ',');
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const rows = S.products.map(p => [p.name, p.category, p.platform, STATUS[p.status], p.buyDate, n(p.buyPrice), n(p.extraCost), n(cost(p)), n(p.listPrice), p.sellDate, isSold(p) ? n(p.sellPrice) : '', isSold(p) ? n(p.sellFee) : '', isSold(p) ? n(profit(p)) : '', age(p), p.buyer, p.notes].map(q).join(';'));
-  download(`brick-produtos-${todayStr()}.csv`, '﻿' + [cols.map(q).join(';'), ...rows].join('\n'), 'text/csv');
-  toast('Planilha exportada');
+  download(`brick-produtos-${todayStr()}.csv`, '\ufeff' + [cols.map(q).join(';'), ...rows].join('\n'), 'text/csv');
 }
 $('#fileImport').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
@@ -1284,11 +1369,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet()
 
 (async function init() {
   const saved = await loadState();
+  applyTheme();
+  if (await connectRemote()) { localBackup = saved; return; }
   if (saved) S = { ...S, ...saved, settings: { ...S.settings, ...(saved.settings || {}) } };
   applyTheme();
   render();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.hostname.endsWith('github.io')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
 </body>
